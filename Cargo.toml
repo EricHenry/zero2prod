@@ -5,6 +5,15 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# cargo will default to `package.name` as the library name, if unspecified
+[lib]
+path = "src/lib.rs"
+
+# a rust project can have multiple binaries, so you use TOMLs array syntax to declare binaries
+[[bin]]
+path = "src/main.rs"
+name = "zero2prod"
+
 [dependencies]
 actix-web = "4"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
