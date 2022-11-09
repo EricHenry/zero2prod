@@ -2,7 +2,7 @@
 set -x
 set -eo pipefail
 
-if ! [ -x "$(command -v psql)"]; then
+if ! [ -x "$(command -v psql)" ]; then
   echo >&2 "Error: psql is not installed."
   exit 1
 fi
@@ -25,15 +25,18 @@ DB_NAME="${POSTGRES_DB:=newsletter}"
 # check of a custom port has been set, otherwise default to '5432'
 DB_PORT="${POSTGRES_PORT:=5432}"
 
-# Launch postgres using Docker
-docker run \
-  -e POSTGRES_USER=${DB_USER} \
-  -e POSTGRES_PASSWORD=${DB_PASSWORD} \
-  -e POSTGRES_DB=${DB_NAME} \
-  -p "${DB_PORT}":5432 \
-  -d postgres \
-  postgres -N 1000
-  # ^ Increased maximum number of connections for testing purposes
+# Launch postgres using Docker unless otherwise specified
+if [[ -z "${SKIP_DOCKER}" ]]
+then
+  docker run \
+    -e POSTGRES_USER=${DB_USER} \
+    -e POSTGRES_PASSWORD=${DB_PASSWORD} \
+    -e POSTGRES_DB=${DB_NAME} \
+    -p "${DB_PORT}":5432 \
+    -d postgres \
+    postgres -N 1000
+    # ^ Increased maximum number of connections for testing purposes
+fi
 
 # Keep pinging Postgres until it's ready to accept commands
 export PGPASSWORD="${DB_PASSWORD}"
@@ -49,4 +52,6 @@ DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAM
 
 export DATABASE_URL
 sqlx database create
+sqlx migrate run
 
+>&2 echo "Postgres has been migrated, we are ready to go!"
