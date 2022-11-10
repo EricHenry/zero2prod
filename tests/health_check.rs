@@ -1,4 +1,8 @@
+use sqlx::{Connection, PgConnection};
+
 use std::net::TcpListener;
+
+use zero2prod::configuration::get_configuration;
 
 /// Spins up a server of our application
 /// and gives us the address it is running on (http://localhost:XXXX)
@@ -36,6 +40,13 @@ async fn health_check_works() {
 async fn subscribe_returns_a_200_for_valid_form_data() {
     // Arrange
     let address = spawn_app();
+    let config = get_configuration().expect("Failed to read config");
+    let connection_string = config.database.connection_string();
+    // `Connection` trait must be in scope for us to invoke
+    // `PgConnection::connect` - it is not an inherent method of the struct
+    let mut connection = PgConnection::connect(&connection_string)
+        .await
+        .expect("Failed to connect to Postgres.");
     let client = reqwest::Client::new();
 
     // Act
@@ -50,6 +61,14 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
 
     // Assert
     assert_eq!(200, response.status().as_u16());
+
+    let saved = sqlx::query!("SELECT email, name FROM subscription")
+        .fetch_one(&mut connection)
+        .await
+        .expect("Failed to fetch saved subscription");
+
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
 }
 
 #[tokio::test]
