@@ -1,10 +1,20 @@
+use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
-
-use std::net::TcpListener;
 use uuid::Uuid;
 
-use zero2prod::configuration::DatabaseSettings;
-use zero2prod::{configuration::get_configuration, startup::run};
+use std::net::TcpListener;
+
+use zero2prod::{
+    configuration::{get_configuration, DatabaseSettings},
+    startup::run,
+    telemetry::{get_subscriber, init_subscriber},
+};
+
+// Ensure that the `tracing` stack is only initialized once using `once_cell`
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let subscriber = get_subscriber("test".into(), "debug".into());
+    init_subscriber(subscriber);
+});
 
 pub struct TestApp {
     pub address: String,
@@ -12,6 +22,10 @@ pub struct TestApp {
 }
 
 async fn spawn_app() -> TestApp {
+    // The first time `initialize` is invoked the code in `TRACING` is executed
+    // All other invocations will instead skip execution.
+    Lazy::force(&TRACING);
+
     // port 0 will bind to a random available port, thank you OS!
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
     // get the port given to us by the OS
