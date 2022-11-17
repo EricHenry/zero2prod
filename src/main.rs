@@ -1,3 +1,4 @@
+use secrecy::ExposeSecret;
 use sqlx::PgPool;
 
 use std::net::TcpListener;
@@ -15,7 +16,7 @@ async fn main() -> std::io::Result<()> {
 
     // panic if we can't read the conf
     let config = get_configuration().expect("Failed to read config");
-    let connection = PgPool::connect(&config.database.connection_string())
+    let connection = PgPool::connect(&config.database.connection_string().expose_secret())
         .await
         .expect("Failed to connect to Postgres");
     let address = format!("127.0.0.1:{}", config.application_port);
