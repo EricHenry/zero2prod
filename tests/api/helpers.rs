@@ -40,7 +40,7 @@ impl TestApp {
             .body(body)
             .send()
             .await
-            .exepect("Failed to execute request.")
+            .expect("Failed to execute request.")
     }
 }
 
