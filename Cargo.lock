@@ -381,10 +381,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "claims"
-version = "0.7.1"
+name = "claim"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6995bbe186456c36307f8ea36be3eefe42f49d106896414e18efc4fb2f846b5"
+checksum = "f81099d6bb72e1df6d50bb2347224b666a670912bb7f06dbe867a4a070ab3ce8"
 dependencies = [
  "autocfg",
 ]
@@ -2791,7 +2791,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "chrono",
- "claims",
+ "claim",
  "config",
  "fake",
  "once_cell",
