@@ -39,19 +39,12 @@ pub async fn subscribe(
         Ok(subscriber) => subscriber,
         Err(_) => return HttpResponse::BadRequest().finish(),
     };
+
     if insert_subscriber(&pool, &new_subscriber).await.is_err() {
         return HttpResponse::InternalServerError().finish();
     }
 
-    // Send a (useless) email to the new subscriber.
-    // We are ignoring email delivery errors for now.
-    if email_client
-        .send_email(
-            new_subscriber.email,
-            "Welcome!",
-            "Welcome to our newsletter!",
-            "Welcome to our newsletter!",
-        )
+    if send_confirmation_email(&email_client, new_subscriber)
         .await
         .is_err()
     {
@@ -59,6 +52,32 @@ pub async fn subscribe(
     }
 
     HttpResponse::Ok().finish()
+}
+
+#[tracing::instrument(
+    name = "Send a confirmation email to a new subscriber.",
+    skip(email_client, new_subscriber)
+)]
+async fn send_confirmation_email(
+    email_client: &EmailClient,
+    new_subscriber: NewSubscriber,
+) -> Result<(), reqwest::Error> {
+    let confirmation_link = "https://my-api.com/subscriptions/confirm";
+    let html_content = format!(
+        "Welcome to our newsletter!<br />\
+                Click <a href=\"{confirmation_link}\">here</a> to confirm your subscription."
+    );
+    let text_content = format!(
+        "Welcome to our newsletter!\nVisit {confirmation_link} to confirm your subscription."
+    );
+    email_client
+        .send_email(
+            new_subscriber.email,
+            "Welcome!",
+            &html_content,
+            &text_content,
+        )
+        .await
 }
 
 /// `tracing_instrument` will take care of attaching `Instrument::instrument` to the async function
